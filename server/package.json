@@ -1,0 +1,32 @@
+{
+  "name": "gochat-server",
+  "version": "1.0.0",
+  "description": "goChat Express.js API server",
+  "main": "api/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/dev.ts",
+    "build": "npx tsc",
+    "start": "node dist/src/dev.js",
+    "typecheck": "npx tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.101.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "serverless-http": "^4.0.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}
