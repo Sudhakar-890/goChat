@@ -13,9 +13,11 @@ VALUES (
     'video/mp4', 'video/webm',
     'application/pdf'
   ]
-);
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- Authenticated users can upload to their own folder
+DROP POLICY IF EXISTS "Media: authenticated upload" ON storage.objects;
 CREATE POLICY "Media: authenticated upload"
   ON storage.objects FOR INSERT
   TO authenticated
@@ -25,12 +27,14 @@ CREATE POLICY "Media: authenticated upload"
   );
 
 -- Users can read media from rooms they participate in
+DROP POLICY IF EXISTS "Media: authenticated read" ON storage.objects;
 CREATE POLICY "Media: authenticated read"
   ON storage.objects FOR SELECT
   TO authenticated
   USING (bucket_id = 'chat-media');
 
 -- Users can delete their own uploads
+DROP POLICY IF EXISTS "Media: delete own" ON storage.objects;
 CREATE POLICY "Media: delete own"
   ON storage.objects FOR DELETE
   TO authenticated
