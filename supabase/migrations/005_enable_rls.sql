@@ -51,19 +51,24 @@ CREATE POLICY "Rooms: update own"
   TO authenticated
   USING (auth.uid() = created_by);
 
--- ========================
--- PARTICIPANTS POLICIES
--- ========================
+-- Function to check if user is in a room (bypasses RLS to prevent recursion)
+CREATE OR REPLACE FUNCTION public.is_room_participant(room_id uuid)
+RETURNS boolean AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.participants
+    WHERE participants.room_id = $1
+    AND participants.user_id = auth.uid()
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Users can see participants of rooms they belong to
 CREATE POLICY "Participants: read own rooms"
   ON public.participants FOR SELECT
   TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM public.participants AS p
-      WHERE p.room_id = participants.room_id
-      AND p.user_id = auth.uid()
-    )
+    public.is_room_participant(room_id)
   );
 
 -- Users can add themselves or be added to rooms

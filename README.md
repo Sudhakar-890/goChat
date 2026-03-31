@@ -77,3 +77,31 @@ goChat/
 - ✅ Responsive design (mobile + desktop)
 - ✅ Dark theme with glassmorphism UI
 - ✅ Framer Motion animations
+
+## Deployment & Required Settings
+
+To successfully deploy and run the app in production, you MUST configure the following settings across your platforms:
+
+### 1. Supabase (Database & Auth)
+- **SQL Migrations**: You must execute the SQL scripts in `supabase/migrations/` in order. 
+  - *🚨 IMPORTANT BUG FIX*: If your project was already created, you **must run** the updated `005_enable_rls.sql` file again in your SQL Editor! It contains a critical `SECURITY DEFINER` function fix (`public.is_room_participant`) that resolves the `infinite recursion detected in policy for relation "participants"` error when creating chats!
+- **Realtime**: Go to **Database** → **Replication** and turn it ON for the `messages` and `rooms` tables. If this is off, chat messages won't appear instantly.
+- **Auth URL**: Go to **Authentication** → **URL Configuration**. Set the **Site URL** to your Netlify production URL (e.g., `https://your-app.netlify.app`).
+
+### 2. Vercel (Backend API)
+- **Root Directory**: When importing the project in Vercel, click Edit on Root Directory and change it from `./` to `server`.
+- **Environment Variables**: You must add the following variables in the Vercel dashboard:
+  - `SUPABASE_URL`: Your Supabase project URL
+  - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (found in API settings)
+  - `FRONTEND_URL`: Your Netlify URL (e.g., `https://your-app.netlify.app`). This is required for CORS to allow the frontend to connect to the backend!
+
+### 3. Netlify (Frontend)
+- **Base Directory**: When importing, change the Base directory to `client`. Netlify will automatically detect Vite.
+- **Environment Variables**: Add these in the Netlify dashboard:
+  - `VITE_SUPABASE_URL`: Your Supabase project URL
+  - `VITE_SUPABASE_ANON_KEY`: Your Supabase anon/public key
+  - `VITE_API_URL`: Your deployed Vercel API URL (e.g., `https://your-api.vercel.app`). Do not include a trailing slash.
+
+### 4. GitHub
+- Ensure your repository contains both the `client` and `server` folders.
+- Do not commit your `.env` files. Ensure they are listed in your `.gitignore` so your Supabase keys remain secure.
