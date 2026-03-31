@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Room, Message } from '../../../types/database';
 import { supabase } from '../../../config/supabase';
+import { api } from '../../../lib/api';
 
 interface ChatState {
   rooms: Room[];
@@ -209,32 +210,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Not authenticated');
 
-    // Create the room
-    const { data: room, error: roomError } = await supabase
-      .from('rooms')
-      .insert({
-        name: name || null,
+    const response = await api<{ data: Room }>('/api/rooms', {
+      method: 'POST',
+      body: {
+        participant_ids: participantIds,
+        name: name || undefined,
         is_group: isGroup,
-        created_by: session.user.id,
-      })
-      .select()
-      .single();
+      },
+      token: session.access_token,
+    });
 
-    if (roomError) throw roomError;
-
-    // Add all participants
-    const allParticipants = [
-      { room_id: room.id, user_id: session.user.id, role: 'admin' },
-      ...participantIds
-        .filter((id) => id !== session.user.id)
-        .map((id) => ({ room_id: room.id, user_id: id, role: 'member' })),
-    ];
-
-    const { error: pError } = await supabase
-      .from('participants')
-      .insert(allParticipants);
-
-    if (pError) throw pError;
+    const room = response.data;
 
     // Refresh rooms list
     await get().fetchRooms();

@@ -6,6 +6,14 @@ export class RoomService {
    * Create a new chat room (DM or group) and add participants
    */
   async createRoom(userId: string, input: CreateRoomInput) {
+    // Check if DM already exists
+    if (!input.is_group && input.participant_ids.length === 1) {
+      const existingDM = await this.findExistingDM(userId, input.participant_ids[0]);
+      if (existingDM) {
+        return existingDM;
+      }
+    }
+
     // Create the room
     const { data: room, error: roomError } = await supabaseAdmin
       .from('rooms')
@@ -102,12 +110,31 @@ export class RoomService {
    * Check if a DM room already exists between two users
    */
   async findExistingDM(userId1: string, userId2: string) {
-    const { data } = await supabaseAdmin.rpc('find_dm_room', {
-      user1: userId1,
-      user2: userId2,
-    });
+    const { data: p1rooms } = await supabaseAdmin
+      .from('participants')
+      .select('room_id')
+      .eq('user_id', userId1);
 
-    return data?.[0] || null;
+    if (!p1rooms || p1rooms.length === 0) return null;
+    const roomIds = p1rooms.map(p => p.room_id);
+
+    const { data: p2rooms } = await supabaseAdmin
+      .from('participants')
+      .select('room_id, rooms!inner(is_group)')
+      .eq('user_id', userId2)
+      .in('room_id', roomIds)
+      .eq('rooms.is_group', false)
+      .limit(1);
+
+    if (p2rooms && p2rooms.length > 0) {
+      const { data: dmRoom } = await supabaseAdmin
+        .from('rooms')
+        .select('*')
+        .eq('id', p2rooms[0].room_id)
+        .single();
+      return dmRoom;
+    }
+    return null;
   }
 }
 
